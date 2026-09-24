@@ -1,15 +1,241 @@
+
+Ghost Ct <gosth.exe.ct@gmail.com>
+08:33 (há 0 minuto)
+para mim
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Checkout de Compra</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .checkout {
+            width: 100%;
+            max-width: 370px;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkout h2 {
+            margin: 20px 0;
+            font-size: 24px;
+            text-align: center;
+            color: #000000;
+        }
+
+        .campo {
+            margin-bottom: 15px;
+        }
+
+        .campo label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #555555;
+        }
+
+        .campo input {
+            width: 100%;
+            padding: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+        }
+
+        .titulo-pagamento {
+            margin: 15px 0;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            color: #555555;
+        }
+
+        .pagamentos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: inherit;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-pix {
+            background-color: #12ac9c;
+        }
+
+        .btn-dinheiro {
+            background-color: #28a745;
+        }
+
+        .btn-cartao {
+            background-color: #007bff;
+        }
+
+        .btn-parcelado {
+            background-color: #6c757d;
+        }
+
+        .resultado {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 5px;
+            color: #333333;
+        }
+
+        .resultado p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .resultado .total {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <div>
-        <h1>CheckOut
-            
-        </h1>
-    </div>
+    <main class="checkout">
+        <h2>Checkout de Compra</h2>
+
+        <div class="campo">
+            <label for="preco">Preço do Produto (R$):</label>
+            <input type="number" id="preco" placeholder="Ex: 100.00" min="0" step="0.01">
+        </div>
+
+        <div class="campo">
+            <label for="frete">Valor do Frete (R$):</label>
+            <input type="number" id="frete" placeholder="Ex: 15.00" min="0" step="0.01">
+        </div>
+
+        <p class="titulo-pagamento">Forma de Pagamento:</p>
+
+        <div class="pagamentos">
+            <button type="button" class="btn btn-pix" data-forma="pix">PIX (-10%)</button>
+            <button type="button" class="btn btn-dinheiro" data-forma="dinheiro">Dinheiro (-5%)</button>
+            <button type="button" class="btn btn-cartao" data-forma="cartao">Cartão à vista</button>
+            <button type="button" class="btn btn-parcelado" data-forma="parcelado">Parcelado (+5%)</button>
+        </div>
+
+        <div class="resultado">
+            <p>Forma: <strong id="forma">-</strong></p>
+            <p class="total">Total: R$ <span id="total">0.00</span></p>
+        </div>
+    </main>
+
+    <script>
+        const FORMAS_PAGAMENTO = {
+            pix: { nome: "PIX", fator: 0.90 },
+            dinheiro: { nome: "Dinheiro", fator: 0.95 },
+            cartao: { nome: "Cartão à vista", fator: 1.00 },
+            parcelado: { nome: "Parcelado", fator: 1.05 }
+        };
+
+        const campoPreco = document.getElementById("preco");
+        const campoFrete = document.getElementById("frete");
+        const textoForma = document.getElementById("forma");
+        const textoTotal = document.getElementById("total");
+        const botoesPagamento = document.querySelectorAll(".btn");
+
+        let formaSelecionada = null;
+
+        function lerValor(campo) {
+            const valor = parseFloat(campo.value);
+            return isNaN(valor) ? 0 : valor;
+        }
+
+        function validarValores(preco, frete) {
+            if (preco <= 0) {
+                return "Digite um preço do produto maior que zero.";
+            }
+            if (frete < 0) {
+                return "O valor do frete não pode ser negativo.";
+            }
+            return null;
+        }
+
+        function calcularTotal(preco, frete, fator) {
+            return (preco + frete) * fator;
+        }
+
+        function exibirResultado(nomeForma, total) {
+            textoForma.textContent = nomeForma;
+            textoTotal.textContent = total.toFixed(2);
+        }
+
+        function limparResultado() {
+            exibirResultado("-", 0);
+        }
+
+        function processarPagamento(mostrarErro) {
+            if (!formaSelecionada) {
+                return;
+            }
+
+            const preco = lerValor(campoPreco);
+            const frete = lerValor(campoFrete);
+            const erro = validarValores(preco, frete);
+
+            if (erro) {
+                limparResultado();
+                if (mostrarErro) {
+                    alert(erro);
+                }
+                return;
+            }
+
+            const forma = FORMAS_PAGAMENTO[formaSelecionada];
+            const total = calcularTotal(preco, frete, forma.fator);
+            exibirResultado(forma.nome, total);
+        }
+
+        function selecionarForma(evento) {
+            formaSelecionada = evento.currentTarget.dataset.forma;
+            processarPagamento(true);
+        }
+
+        function atualizarAoDigitar() {
+            processarPagamento(false);
+        }
+
+        botoesPagamento.forEach(botao => botao.addEventListener("click", selecionarForma));
+        campoPreco.addEventListener("input", atualizarAoDigitar);
+        campoFrete.addEventListener("input", atualizarAoDigitar);
+    </script>
 </body>
 </html>
+
